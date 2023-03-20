@@ -23,6 +23,8 @@ Quilômentro, Metro, Centímetro, Milímetro, Milha, Pé, Ano-luz e Légua.
 Todos os nomes de váriaveis, classes, etc... são em português para facilitar o entendimento dos alunos participantes da ONE Oracle, não incluindo os nomes que se encontram na biblioteca padrão do Java. Já que é apenas um projeto para estudo, eu preferi prezar para a acessibilidade.
 Ele foi desenvolvido pensando ao máximo sobre em seguir os padrões de Orientação a Objetos e o kit Swing ajuda bastante nisso, mas, caso tiver sugestões, sinta-se livre em abrir uma issue ou até mesmo me contatar.
 
+O projeto usa o [Maven](https://maven.apache.org/) para gerenciar "builds" de projetos. Com ele é possível configurar um ambiente de desenvolvimento padronizado seguindo boas práticas, permitindo compilação, gerência de dependências e distribuição de uma aplicação editando apenas um arquivo e utilizando conceitos de convenção sobre configuração.
+
 # Dificuldades e Problemas
 Ainda não consegui encontrar uma maneira de permitir números negativos na entrada de usuário, o que será bastante útil para quem quer converter temperaturas negativas.
 
