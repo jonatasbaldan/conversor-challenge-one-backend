@@ -41,4 +41,5 @@ Ainda não consegui encontrar uma maneira de permitir números negativos na entr
 
 # Atribuições
 [FlatLaf - Flat Look and Feel](https://www.formdev.com/flatlaf/) - FlatLaf é um Look and Feel moderno multiplataforma de código aberto para aplicativos de desktop Java Swing.
+
 [Maan Icons](https://www.flaticon.com/br/autores/maan-icons) - Icone usado para a janela.
