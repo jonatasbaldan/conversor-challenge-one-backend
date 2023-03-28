@@ -1,17 +1,13 @@
 package org.conversor;
 
 import javax.swing.*;
-import javax.swing.text.DefaultFormatter;
-import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.text.DecimalFormat;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
+import java.util.List;
 
 public class Conversor extends JPanel {
     protected JLabel titulo;
@@ -75,7 +71,7 @@ public class Conversor extends JPanel {
         botaoConverter.addActionListener(e -> converter());
         this.add(botaoConverter);
 
-        valorConvertido = new JTextArea ();
+        valorConvertido = new JTextArea();
         valorConvertido.setBounds(20, 280, 260, 72);
         valorConvertido.setFont(new Font("Arial", Font.BOLD, 16));
         valorConvertido.setText("0,00");
@@ -87,7 +83,6 @@ public class Conversor extends JPanel {
 
     protected void setTitle(String title) {
         titulo.setText(String.format("Conversor de %s", title));
-        System.out.println(title);
     }
 
     protected void converter() {}
@@ -99,17 +94,69 @@ public class Conversor extends JPanel {
 
 
 class ConversorDeMoeda extends Conversor {
+    private JButton botaoAtualizar;
+    private JFrame janelaAtualizar;
+    private Map<String, Map<String, String>> moedas;
 
     ConversorDeMoeda() {
-        super();
         super.setTitle("Moeda");
         primeiraCaixaSelecao.setSelectedItem("Real");
         segundaCaixaSelecao.setSelectedItem("Dolar");
+
+        botaoAtualizar = new JButton("Atualizar");
+        botaoAtualizar.setBounds(250, 15, 30, 30);
+        botaoAtualizar.addActionListener(e -> atualizarValores());
+        this.add(botaoAtualizar);
     }
 
     @Override
     public String[] getSelecao() {
-        return new String[]{"Real", "Dolar", "Euro", "Libra Esterlina", "Peso Argentino", "Peso Chileno"};
+
+        moedas = new HashMap<>();
+        moedas.put("Real", new HashMap<>(){{put("BRL", "R$");}});
+        moedas.put("Dolar", new HashMap<>(){{put("USD", "$");}});
+        moedas.put("Euro", new HashMap<>(){{put("EUR", "€");}});
+        moedas.put("Libra Esterlina", new HashMap<>(){{put("GBP", "£");}});
+        moedas.put("Peso Argentino", new HashMap<>(){{put("ARS", "$");}});
+        moedas.put("Peso Chileno", new HashMap<>(){{put("CLP", "$");}});
+
+        String[] nomes = new String[6];
+
+        int indice = 0;
+
+        for (String nome : moedas.keySet()) {
+
+            nomes[indice] = nome;
+            indice++;
+        }
+
+        return nomes;
+    }
+
+    private void atualizarValores() {
+        janelaAtualizar = new JFrame("Atualizar preço das moedas");
+        janelaAtualizar.setSize(320, 220);
+        janelaAtualizar.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        janelaAtualizar.setResizable(false);
+        janelaAtualizar.setLayout(null);
+
+        JLabel entradaApiTitulo = new JLabel("Chave API");
+        entradaApiTitulo.setBounds(30, 30, 120, 16);
+        janelaAtualizar.add(entradaApiTitulo);
+
+        JTextField entradaApi = new JTextField();
+        entradaApi.setBounds(30, 60, 190, 42);
+        janelaAtualizar.add(entradaApi);
+
+        JButton botaoOk = new JButton("Ok");
+        botaoOk.setBounds(30, 120, 50, 20);
+        janelaAtualizar.add(botaoOk);
+
+        JButton botaoCancelar = new JButton("Cancelar");
+        botaoCancelar.setBounds(100, 120, 120, 20);
+        janelaAtualizar.add(botaoCancelar);
+
+        janelaAtualizar.setVisible(true);
     }
 
     @Override
@@ -127,7 +174,13 @@ class ConversorDeMoeda extends Conversor {
             valorCalculado = 0D;
         }
 
-        String valorFormatado = String.format("%,.2f %s", valorCalculado, valorSegundaCaixa);
+        String simbolo = new String();
+
+        for (String simboloTemp : moedas.get(valorSegundaCaixa).values()) {
+            simbolo = simboloTemp;
+        }
+
+        String valorFormatado = String.format("%s %,.2f", simbolo, valorCalculado);
 
         valorConvertido.setText(valorFormatado);
     }
@@ -221,7 +274,6 @@ class ConversorDeTemperatura extends Conversor {
         Double valorCalculado;
 
         try {
-            System.out.println("asdf" + entradaDoUsuario.getText());
             valor = Double.parseDouble(entradaDoUsuario.getText());
             valorCalculado = getCalculoTemperatura(valorPrimeiraCaixa, valorSegundaCaixa, valor);
         } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
@@ -499,7 +551,6 @@ class ConversorDeDistancia extends Conversor {
             valorCalculado = getCalculoDistancia(valorPrimeiraCaixa, valorSegundaCaixa, valor);
         } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
             valorCalculado = "0.0";
-            System.out.println("exc");
         }
 
         String valorFormatado;
@@ -507,7 +558,6 @@ class ConversorDeDistancia extends Conversor {
         if (valorCalculado.contains("E")) {
             valorFormatado = String.format("%s %s", valorCalculado, valorSegundaCaixa);
         } else {
-            System.out.println("dble");
             Double valorCalculadoConvertido = Double.parseDouble(valorCalculado);
             valorFormatado = String.format("%,f %s", valorCalculadoConvertido, valorSegundaCaixa);
         }
@@ -765,7 +815,6 @@ class ConversorDeDistancia extends Conversor {
             return String.valueOf(resultado);
         }
 
-        System.out.println(resultadoAnosLuz.toEngineeringString());
         return resultadoAnosLuz.toEngineeringString();
     }
 }

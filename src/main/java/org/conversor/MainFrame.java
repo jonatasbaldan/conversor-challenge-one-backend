@@ -18,8 +18,6 @@ public class MainFrame extends JFrame {
         this.setSize(320, 493); //sets x-dimension and y-dimension
         this.setResizable(false);
 
-
-
         AbasConversor abas = new AbasConversor();
 
         abas.addTab("Moeda", new ConversorDeMoeda());
