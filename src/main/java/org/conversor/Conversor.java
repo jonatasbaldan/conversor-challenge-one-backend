@@ -1,6 +1,7 @@
 package org.conversor;
 
 import javax.swing.*;
+import javax.swing.text.DefaultFormatter;
 import javax.swing.text.NumberFormatter;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -14,7 +15,7 @@ import java.util.Objects;
 
 public class Conversor extends JPanel {
     protected JLabel titulo;
-    protected JFormattedTextField entradaDoUsuario;
+    protected JTextField entradaDoUsuario;
     protected JComboBox<String> primeiraCaixaSelecao;
     protected JComboBox<String> segundaCaixaSelecao;
     protected JButton botaoConverter;
@@ -34,7 +35,7 @@ public class Conversor extends JPanel {
         tituloEntradaDoUsuario.setBounds(20, 100, 120, 13);
         this.add(tituloEntradaDoUsuario);
 
-        entradaDoUsuario = new JFormattedTextField(getFormatadorNumerico());
+        entradaDoUsuario = new JTextField();
         entradaDoUsuario.setPreferredSize(new Dimension(120, 42));
         entradaDoUsuario.setBounds(20, 120, 120, 42);
         entradaDoUsuario.addKeyListener(new KeyListener() {
@@ -43,8 +44,10 @@ public class Conversor extends JPanel {
             @Override
             public void keyPressed(KeyEvent e) {}
             @Override
-            public void keyReleased(KeyEvent e) {converter();}
+            public void keyReleased(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) converter();}
         });
+
         this.add(entradaDoUsuario);
 
         JLabel tituloPimeiraCaixaSelecao = new JLabel("De");
@@ -87,24 +90,10 @@ public class Conversor extends JPanel {
         System.out.println(title);
     }
 
-
     protected void converter() {}
 
     protected String[] getSelecao() {
         return new String[]{};
-    }
-
-    protected NumberFormatter getFormatadorNumerico() {
-
-        DecimalFormat formatoDecial = new DecimalFormat("#,###.00");
-        NumberFormatter formatador = new NumberFormatter(formatoDecial);
-
-        formatador.setValueClass(Double.class);
-        formatador.setAllowsInvalid(false);
-        formatador.setMinimum(0D);
-        formatador.setMaximum(Double.MAX_VALUE);
-
-        return formatador;
     }
 }
 
@@ -125,16 +114,16 @@ class ConversorDeMoeda extends Conversor {
 
     @Override
     public void converter() {
-        String valorPrimeiraCaixa = primeiraCaixaSelecao.getSelectedItem().toString();
-        String valorSegundaCaixa = segundaCaixaSelecao.getSelectedItem().toString();
+        String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
+        String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
 
         double valor;
         double valorCalculado;
 
         try {
-            valor = Double.parseDouble(entradaDoUsuario.getValue().toString());
+            valor = Double.parseDouble(entradaDoUsuario.getText()) > 0 ? Double.parseDouble(entradaDoUsuario.getText()) : 0;
             valorCalculado = getCalculoConversao(valorPrimeiraCaixa, valorSegundaCaixa, valor);
-        } catch (NullPointerException | ArithmeticException e) {
+        } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
             valorCalculado = 0D;
         }
 
@@ -210,11 +199,9 @@ class ConversorDeMoeda extends Conversor {
 class ConversorDeTemperatura extends Conversor {
 
     ConversorDeTemperatura() {
-
         super.setTitle("Temperatura");
         primeiraCaixaSelecao.setSelectedItem("Celsius");
         segundaCaixaSelecao.setSelectedItem("Fahrenheit");
-
     }
 
     @Override
@@ -227,16 +214,17 @@ class ConversorDeTemperatura extends Conversor {
 
         //TODO: fazer a entrada de dados também aceitar numeros negativos
 
-        String valorPrimeiraCaixa = primeiraCaixaSelecao.getSelectedItem().toString();
-        String valorSegundaCaixa = segundaCaixaSelecao.getSelectedItem().toString();
+        String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
+        String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
 
         Double valor;
         Double valorCalculado;
 
         try {
-            valor = Double.parseDouble(entradaDoUsuario.getValue().toString());
+            System.out.println("asdf" + entradaDoUsuario.getText());
+            valor = Double.parseDouble(entradaDoUsuario.getText());
             valorCalculado = getCalculoTemperatura(valorPrimeiraCaixa, valorSegundaCaixa, valor);
-        } catch (NullPointerException | ArithmeticException e) {
+        } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
             valorCalculado = 0D;
         }
 
@@ -500,16 +488,16 @@ class ConversorDeDistancia extends Conversor {
 
     @Override
     public void converter() {
-        String valorPrimeiraCaixa = primeiraCaixaSelecao.getSelectedItem().toString();
-        String valorSegundaCaixa = segundaCaixaSelecao.getSelectedItem().toString();
+        String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
+        String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
 
         double valor;
         String valorCalculado;
 
         try {
-            valor = Double.parseDouble(entradaDoUsuario.getValue().toString());
+            valor = Double.parseDouble(entradaDoUsuario.getText()) > 0 ? Double.parseDouble(entradaDoUsuario.getText()) : 0;
             valorCalculado = getCalculoDistancia(valorPrimeiraCaixa, valorSegundaCaixa, valor);
-        } catch (NullPointerException | ArithmeticException e) {
+        } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
             valorCalculado = "0.0";
             System.out.println("exc");
         }
