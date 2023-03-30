@@ -32,6 +32,10 @@ Ele foi desenvolvido pensando ao máximo sobre em seguir os padrões de Orienta�
 
 O projeto usa o [Maven](https://maven.apache.org/) para gerenciar "builds" de projetos. Com ele é possível configurar um ambiente de desenvolvimento padronizado seguindo boas práticas, permitindo compilação, gerência de dependências e distribuição de uma aplicação editando apenas um arquivo e utilizando conceitos de convenção sobre configuração.
 
+# Requisitos
+- JDK 17.0.5
+- Maven 4.0
+
 # Referências
 [Java GUI: Full Course ☕ (FREE)](https://youtu.be/Kmgo00avvEw)
 
