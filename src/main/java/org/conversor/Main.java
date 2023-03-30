@@ -9,7 +9,7 @@ public class Main {
         SwingUtilities.invokeLater(() -> {
 
             FlatOneDarkIJTheme.setup();
-            new MainFrame();
+            new JanelaPrincipal();
         });
     }
 }

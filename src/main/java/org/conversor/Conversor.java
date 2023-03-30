@@ -1,20 +1,30 @@
 package org.conversor;
 
+import org.json.JSONObject;
+
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.net.ConnectException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
-import java.util.List;
 
 public class Conversor extends JPanel {
     protected JLabel titulo;
     protected JTextField entradaDoUsuario;
     protected JComboBox<String> primeiraCaixaSelecao;
     protected JComboBox<String> segundaCaixaSelecao;
-    protected JButton botaoConverter;
+    protected JButton botaoOk;
     protected JTextArea valorConvertido;
 
     Conversor() {
@@ -65,11 +75,15 @@ public class Conversor extends JPanel {
 
         this.add(segundaCaixaSelecao);
 
-        botaoConverter = new JButton();
-        botaoConverter.setText("Converter");
-        botaoConverter.setBounds(20, 200, 120, 42);
-        botaoConverter.addActionListener(e -> converter());
-        this.add(botaoConverter);
+        botaoOk = new JButton();
+        botaoOk.setText("Converter");
+        botaoOk.setBounds(20, 200, 120, 42);
+        botaoOk.addActionListener(e -> converter());
+        botaoOk.setBackground(new Color(0x568af2));
+        botaoOk.setFont(new Font("Arial", Font.PLAIN, 13));
+        botaoOk.setForeground(Color.BLACK);
+        botaoOk.setBorderPainted(false);
+        this.add(botaoOk);
 
         valorConvertido = new JTextArea();
         valorConvertido.setBounds(20, 280, 260, 72);
@@ -97,15 +111,27 @@ class ConversorDeMoeda extends Conversor {
     private JButton botaoAtualizar;
     private JFrame janelaAtualizar;
     private Map<String, Map<String, String>> moedas;
+    private Map<String, BigDecimal> valoresTaxaMoedasEmDolar;
 
     ConversorDeMoeda() {
         super.setTitle("Moeda");
         primeiraCaixaSelecao.setSelectedItem("Real");
         segundaCaixaSelecao.setSelectedItem("Dolar");
 
-        botaoAtualizar = new JButton("Atualizar");
+        valoresTaxaMoedasEmDolar = new HashMap<>(){{
+            put("Dolar", new BigDecimal("1.0"));
+            put("Euro", new BigDecimal("0.93"));
+            put("Real", new BigDecimal("5.28"));
+            put("Libra Esterlina", new BigDecimal("0.82"));
+            put("Peso Argentino", new BigDecimal("200.1"));
+            put("Peso Chileno", new BigDecimal("814.84"));
+        }};
+
+        botaoAtualizar = new JButton();
+        ImageIcon icone = new ImageIcon(Objects.requireNonNull(Conversor.class.getResource("/refresh-freepik-gray.png")));
+        botaoAtualizar.setIcon(icone);
         botaoAtualizar.setBounds(250, 15, 30, 30);
-        botaoAtualizar.addActionListener(e -> atualizarValores());
+        botaoAtualizar.addActionListener(e -> janelaAtualizarValores());
         this.add(botaoAtualizar);
     }
 
@@ -133,30 +159,149 @@ class ConversorDeMoeda extends Conversor {
         return nomes;
     }
 
-    private void atualizarValores() {
+    private void janelaAtualizarValores() {
         janelaAtualizar = new JFrame("Atualizar preço das moedas");
-        janelaAtualizar.setSize(320, 220);
+        janelaAtualizar.setSize(320, 320);
         janelaAtualizar.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         janelaAtualizar.setResizable(false);
+        ImageIcon icone = new ImageIcon(Objects.requireNonNull(Conversor.class.getResource("/funil-Maan-icons.png")));
+        janelaAtualizar.setIconImage(icone.getImage());
         janelaAtualizar.setLayout(null);
+        janelaAtualizar.setLocationRelativeTo(this.botaoAtualizar);
+
+        JTextArea descricaoTexto = new JTextArea();
+        String descricao = "Para obter a taxa de cambio atual, nós usamos a API Open Exchange Rates" +
+                " para atualizar os preços das moedas.";
+        descricaoTexto.setText(descricao);
+        descricaoTexto.setEditable(false);
+        descricaoTexto.setLineWrap(true);
+        descricaoTexto.setWrapStyleWord(true);
+        descricaoTexto.setBounds(43, 20, 220, 60);
+        janelaAtualizar.add(descricaoTexto);
 
         JLabel entradaApiTitulo = new JLabel("Chave API");
-        entradaApiTitulo.setBounds(30, 30, 120, 16);
+        entradaApiTitulo.setFont(new Font("Arial", Font.BOLD, 13));
+        entradaApiTitulo.setBounds(50, 95, 120, 16);
         janelaAtualizar.add(entradaApiTitulo);
 
         JTextField entradaApi = new JTextField();
-        entradaApi.setBounds(30, 60, 190, 42);
+        entradaApi.setBounds(47, 120, 190, 42);
         janelaAtualizar.add(entradaApi);
 
         JButton botaoOk = new JButton("Ok");
-        botaoOk.setBounds(30, 120, 50, 20);
+        botaoOk.setBounds(50, 190, 70, 42);
+        botaoOk.setBackground(new Color(0x568af2));
+        botaoOk.setFont(new Font("Arial", Font.PLAIN, 13));
+        botaoOk.setForeground(Color.BLACK);
+        botaoOk.setBorderPainted(false);
         janelaAtualizar.add(botaoOk);
 
         JButton botaoCancelar = new JButton("Cancelar");
-        botaoCancelar.setBounds(100, 120, 120, 20);
+        botaoCancelar.setBounds(130, 190, 100, 42);
+        botaoCancelar.addActionListener(e -> janelaAtualizar.setVisible(false));
         janelaAtualizar.add(botaoCancelar);
 
+        JTextArea textoStatus = new JTextArea();
+        textoStatus.setFont(new Font("Arial", Font.PLAIN, 12));
+        textoStatus.setBounds(45, 163, 220, 16);
+        textoStatus.setEditable(false);
+
+        botaoOk.addActionListener(e -> {
+            try {
+                textoStatus.setForeground(new Color(0x38b000));
+                atualizarValores(entradaApi.getText());
+                textoStatus.setText("Valores atualizado com sucesso!");
+                janelaAtualizar.setVisible(false);
+            } catch (Exception ex) {
+                System.out.println(ex.getMessage());
+                ex.getStackTrace();
+                textoStatus.setForeground(new Color(0xE51B27));
+                if (entradaApi.getText().equals("")) {
+                    textoStatus.setText("Insira uma chave válida.");
+                } else {
+                    textoStatus.setText(ex.getMessage());
+                }
+            }
+        });
+        janelaAtualizar.add(textoStatus);
+
+        JLabel link = new JLabel();
+        link.setText("<html><a href='https://openexchangerates.org/'>https://openexchangerates.org/</a></html>");
+        link.setCursor(new Cursor(Cursor.HAND_CURSOR));
+        link.addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                try {
+                    Desktop.getDesktop().browse(new URI("https://openexchangerates.org/"));
+                } catch (Exception ex) {
+                    ex.getStackTrace();
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+
+            }
+        });
+        link.setFont(new Font("Arial", Font.PLAIN, 13));
+        link.setBounds(50, 250, 200, 20);
+        janelaAtualizar.add(link);
+
         janelaAtualizar.setVisible(true);
+    }
+
+    private void atualizarValores(String chave) throws URISyntaxException, IOException, InterruptedException {
+
+        HttpRequest request = HttpRequest.newBuilder()
+                .uri(new URI("https://openexchangerates.org/api/latest.json?symbols=BRL,USD,EUR,GBP,ARS,CLP"))
+                .header("Authorization", String.format(" Token %s", chave))
+                .GET()
+                .build();
+
+        HttpClient client = HttpClient.newHttpClient();
+        HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+        System.out.println(response.body());
+
+        int statusCode = response.statusCode();
+
+        if (statusCode == 401) {
+            throw new ConnectException("Chave API inválida.");
+        } else if (statusCode == 429) {
+            throw new ConnectException("Você não tem permissão para acessar essa rota.");
+        } else if (statusCode == 404) {
+            throw new ConnectException("Erro de conexão.");
+        }else if (statusCode > 400) {
+            throw new ConnectException("Erro. Por favor, tente mais tarde.");
+        }
+
+        JSONObject jsonBody = new JSONObject(response.body());
+        jsonBody = jsonBody.getJSONObject("rates");
+
+        System.out.println(jsonBody);
+
+        valoresTaxaMoedasEmDolar = new HashMap<>();
+
+        valoresTaxaMoedasEmDolar.put("Real", new BigDecimal(jsonBody.get("BRL").toString()));
+        valoresTaxaMoedasEmDolar.put("Dolar", new BigDecimal("1.0"));
+        valoresTaxaMoedasEmDolar.put("Euro", new BigDecimal(jsonBody.get("EUR").toString()));
+        valoresTaxaMoedasEmDolar.put("Libra Esterlina", new BigDecimal(jsonBody.get("GBP").toString()));
+        valoresTaxaMoedasEmDolar.put("Peso Argentino", new BigDecimal(jsonBody.get("ARS").toString()));
+        valoresTaxaMoedasEmDolar.put("Peso Chileno", new BigDecimal(jsonBody.get("CLP").toString()));
     }
 
     @Override
@@ -174,7 +319,7 @@ class ConversorDeMoeda extends Conversor {
             valorCalculado = 0D;
         }
 
-        String simbolo = new String();
+        String simbolo = "";
 
         for (String simboloTemp : moedas.get(valorSegundaCaixa).values()) {
             simbolo = simboloTemp;
@@ -187,67 +332,14 @@ class ConversorDeMoeda extends Conversor {
 
     private Double getCalculoConversao(String deMoeda, String paraMoeda, Double valor) throws NullPointerException, ArithmeticException {
 
-        Map<String, Map<String, Double>> valoresTaxaMoedas = new HashMap<>();
+        BigDecimal taxa = new BigDecimal(valoresTaxaMoedasEmDolar.get("Dolar").toString());
+        taxa = taxa.divide(valoresTaxaMoedasEmDolar.get(deMoeda), RoundingMode.HALF_EVEN);
+        taxa = taxa.multiply(valoresTaxaMoedasEmDolar.get(paraMoeda));
+        taxa = taxa.multiply(BigDecimal.valueOf(valor));
 
-        valoresTaxaMoedas.put("Dolar", new HashMap<>() {{
-            put("Dolar", 1.0);
-            put("Euro", 0.93);
-            put("Real", 5.28);
-            put("Libra Esterlina", 0.82);
-            put("Peso Argentino", 200.1);
-            put("Peso Chileno", 814.84);
-        }});
-
-        valoresTaxaMoedas.put("Real", new HashMap<>() {{
-            put("Dolar", 0.19);
-            put("Euro", 0.18);
-            put("Real", 1.0);
-            put("Libra Esterlina", 0.16);
-            put("Peso Argentino", 37.9);
-            put("Peso Chileno", 154.34);
-        }});
-
-        valoresTaxaMoedas.put("Euro", new HashMap<>() {{
-            put("Dolar", 1.08);
-            put("Euro", 1.0);
-            put("Real", 5.56);
-            put("Libra Esterlina", 0.89);
-            put("Peso Argentino", 215.72);
-            put("Peso Chileno", 878.44);
-        }});
-
-        valoresTaxaMoedas.put("Libra Esterlina", new HashMap<>() {{
-            put("Dolar", 1.22);
-            put("Euro", 1.13);
-            put("Real", 6.43);
-            put("Libra Esterlina", 1.0);
-            put("Peso Argentino", 243.67);
-            put("Peso Chileno", 992.27);
-        }});
-
-        valoresTaxaMoedas.put("Peso Argentino", new HashMap<>() {{
-            put("Dolar", 0.005);
-            put("Euro", 0.0046);
-            put("Real", 0.026);
-            put("Libra Esterlina", 0.0041);
-            put("Peso Argentino", 1.0);
-            put("Peso Chileno", 4.07);
-        }});
-
-        valoresTaxaMoedas.put("Peso Chileno", new HashMap<>() {{
-            put("Dolar", 0.0012);
-            put("Euro", 0.0011);
-            put("Real", 0.0064);
-            put("Libra Esterlina", 0.001);
-            put("Peso Argentino", 0.24);
-            put("Peso Chileno", 1.0);
-        }});
-
-        Double taxa = valoresTaxaMoedas.get(deMoeda).get(paraMoeda);
-        return valor * taxa;
+        return taxa.doubleValue();
     }
 }
-
 
 class ConversorDeTemperatura extends Conversor {
 
