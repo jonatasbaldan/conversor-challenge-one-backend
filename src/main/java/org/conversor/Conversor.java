@@ -4,10 +4,7 @@ import org.json.JSONObject;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -28,17 +25,21 @@ public class Conversor extends JPanel {
     protected JComboBox<String> segundaCaixaSelecao;
     protected JButton botaoOk;
     protected JTextArea valorConvertido;
+    protected JLabel mensagemErro;
+    protected JLabel tituloEntradaDoUsuario;
+    JLabel tituloPimeiraCaixaSelecao;
+    JLabel tituloSegundaCaixaSelecao;
 
     Conversor() {
         this.setBounds(0, 0, 320, 493);
         this.setLayout(null);
 
         titulo = new JLabel();
-        titulo.setBounds(60, 40, 320, 32);
+        titulo.setBounds(0, 40, 290, 16);
         titulo.setFont(new Font("Arial", Font.BOLD, 16));
         this.add(titulo);
 
-        JLabel tituloEntradaDoUsuario = new JLabel("Valor");
+        tituloEntradaDoUsuario = new JLabel("Valor");
         tituloEntradaDoUsuario.setFont(new Font("Arial", Font.PLAIN, 13));
         tituloEntradaDoUsuario.setBounds(20, 100, 120, 13);
         this.add(tituloEntradaDoUsuario);
@@ -46,6 +47,20 @@ public class Conversor extends JPanel {
         entradaDoUsuario = new JTextField();
         entradaDoUsuario.setPreferredSize(new Dimension(120, 42));
         entradaDoUsuario.setBounds(20, 120, 120, 42);
+        entradaDoUsuario.setText("0,00");
+        entradaDoUsuario.addFocusListener(new FocusListener() {
+            @Override
+            public void focusGained(FocusEvent e) {
+                entradaDoUsuario.setText("");
+            }
+
+            @Override
+            public void focusLost(FocusEvent e) {
+                if (entradaDoUsuario.getText().isEmpty()) {
+                    entradaDoUsuario.setText("0,0");
+                }
+            }
+        });
         entradaDoUsuario.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {}
@@ -55,26 +70,29 @@ public class Conversor extends JPanel {
             public void keyReleased(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) converter();}
         });
-
         this.add(entradaDoUsuario);
 
-        JLabel tituloPimeiraCaixaSelecao = new JLabel("De");
+        mensagemErro = new JLabel();
+        mensagemErro.setBounds(22, 165, 120, 13);
+        mensagemErro.setForeground(new Color(0xE51B27));
+        this.add(mensagemErro);
+
+        tituloPimeiraCaixaSelecao = new JLabel("De");
         tituloPimeiraCaixaSelecao.setFont(new Font("Arial", Font.PLAIN, 13));
-        tituloPimeiraCaixaSelecao.setBounds(160, 100, 120, 13);
+        tituloPimeiraCaixaSelecao.setBounds(163, 100, 120, 13);
         this.add(tituloPimeiraCaixaSelecao);
 
         primeiraCaixaSelecao = new JComboBox<>(getSelecao());
         primeiraCaixaSelecao.setBounds(160, 120, 120, 42);
         this.add(primeiraCaixaSelecao);
 
-        JLabel tituloSegundaCaixaSelecao = new JLabel("Para");
+        tituloSegundaCaixaSelecao = new JLabel("Para");
         tituloSegundaCaixaSelecao.setFont(new Font("Arial", Font.PLAIN, 13));
-        tituloSegundaCaixaSelecao.setBounds(160, 180, 120, 13);
+        tituloSegundaCaixaSelecao.setBounds(163, 180, 120, 13);
         this.add(tituloSegundaCaixaSelecao);
 
         segundaCaixaSelecao = new JComboBox<>(getSelecao());
         segundaCaixaSelecao.setBounds(160, 200, 120, 42);
-
         this.add(segundaCaixaSelecao);
 
         botaoOk = new JButton();
@@ -99,6 +117,7 @@ public class Conversor extends JPanel {
 
     protected void setTitle(String title) {
         titulo.setText(String.format("Conversor de %s", title));
+        titulo.setHorizontalAlignment(JLabel.CENTER);
     }
 
     protected void converter() {}
@@ -143,7 +162,7 @@ class ConversorDeMoeda extends Conversor {
     }
 
     @Override
-    public String[] getSelecao() {
+    protected String[] getSelecao() {
 
         moedas = new HashMap<>();
         moedas.put("Real", new HashMap<>(){{put("BRL", "R$");}});
@@ -164,6 +183,46 @@ class ConversorDeMoeda extends Conversor {
         }
 
         return nomes;
+    }
+
+    @Override
+    protected void converter() {
+        String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
+        String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
+
+        double valor;
+        double valorCalculado;
+
+        try {
+            String tempValor = entradaDoUsuario.getText().replace(".", "_");
+            tempValor = tempValor.replace(",", ".");
+            valor = Double.parseDouble(tempValor) > 0 ? Double.parseDouble(tempValor) : 0;
+            valorCalculado = getCalculoConversao(valorPrimeiraCaixa, valorSegundaCaixa, valor);
+            super.mensagemErro.setText("");
+        } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
+            valorCalculado = 0D;
+            super.mensagemErro.setText("Valor inválido.");
+        }
+
+        String simbolo = "";
+
+        for (String simboloTemp : moedas.get(valorSegundaCaixa).values()) {
+            simbolo = simboloTemp;
+        }
+
+        String valorFormatado = String.format("%s %,.2f", simbolo, valorCalculado);
+
+        valorConvertido.setText(valorFormatado);
+    }
+
+    private Double getCalculoConversao(String deMoeda, String paraMoeda, Double valor) throws NullPointerException, ArithmeticException {
+
+        BigDecimal taxa = new BigDecimal(valoresTaxaMoedasEmDolar.get("Dolar").toString());
+        taxa = taxa.divide(valoresTaxaMoedasEmDolar.get(deMoeda), RoundingMode.HALF_EVEN);
+        taxa = taxa.multiply(valoresTaxaMoedasEmDolar.get(paraMoeda));
+        taxa = taxa.multiply(BigDecimal.valueOf(valor));
+
+        return taxa.doubleValue();
     }
 
     private void janelaAtualizarValores() {
@@ -223,13 +282,10 @@ class ConversorDeMoeda extends Conversor {
                 System.out.println(ex.getMessage());
                 ex.getStackTrace();
                 textoStatus.setForeground(new Color(0xE51B27));
-                if (entradaApi.getText().equals("")) {
-                    textoStatus.setText("Insira uma chave válida.");
-                } else {
-                    textoStatus.setText(ex.getMessage());
-                }
+                textoStatus.setText(ex.getMessage());
             }
         });
+
         janelaAtualizar.add(textoStatus);
 
         JLabel link = new JLabel();
@@ -274,6 +330,10 @@ class ConversorDeMoeda extends Conversor {
 
     private void atualizarValores(String chave) throws URISyntaxException, IOException, InterruptedException {
 
+        if (chave.length() != 32 || chave.isBlank()) {
+            throw new ConnectException("Chave API inválida.");
+        }
+
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(new URI("https://openexchangerates.org/api/latest.json?symbols=BRL,USD,EUR,GBP,ARS,CLP"))
                 .header("Authorization", String.format(" Token %s", chave))
@@ -282,7 +342,6 @@ class ConversorDeMoeda extends Conversor {
 
         HttpClient client = HttpClient.newHttpClient();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        System.out.println(response.body());
 
         int statusCode = response.statusCode();
 
@@ -299,8 +358,6 @@ class ConversorDeMoeda extends Conversor {
         JSONObject jsonBody = new JSONObject(response.body());
         jsonBody = jsonBody.getJSONObject("rates");
 
-        System.out.println(jsonBody);
-
         valoresTaxaMoedasEmDolar = new HashMap<>();
 
         valoresTaxaMoedasEmDolar.put("Real", new BigDecimal(jsonBody.get("BRL").toString()));
@@ -314,62 +371,46 @@ class ConversorDeMoeda extends Conversor {
         String dataDeAgoraFormatado = dataDeAgora.format(DateTimeFormatter.ofPattern("dd/MM/yyy"));
         dataTaxaCambio.setText(String.format("Data valores: %s", dataDeAgoraFormatado));
     }
-
-    @Override
-    public void converter() {
-        String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
-        String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
-
-        double valor;
-        double valorCalculado;
-
-        try {
-            valor = Double.parseDouble(entradaDoUsuario.getText()) > 0 ? Double.parseDouble(entradaDoUsuario.getText()) : 0;
-            valorCalculado = getCalculoConversao(valorPrimeiraCaixa, valorSegundaCaixa, valor);
-        } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
-            valorCalculado = 0D;
-        }
-
-        String simbolo = "";
-
-        for (String simboloTemp : moedas.get(valorSegundaCaixa).values()) {
-            simbolo = simboloTemp;
-        }
-
-        String valorFormatado = String.format("%s %,.2f", simbolo, valorCalculado);
-
-        valorConvertido.setText(valorFormatado);
-    }
-
-    private Double getCalculoConversao(String deMoeda, String paraMoeda, Double valor) throws NullPointerException, ArithmeticException {
-
-        BigDecimal taxa = new BigDecimal(valoresTaxaMoedasEmDolar.get("Dolar").toString());
-        taxa = taxa.divide(valoresTaxaMoedasEmDolar.get(deMoeda), RoundingMode.HALF_EVEN);
-        taxa = taxa.multiply(valoresTaxaMoedasEmDolar.get(paraMoeda));
-        taxa = taxa.multiply(BigDecimal.valueOf(valor));
-
-        return taxa.doubleValue();
-    }
 }
+
 
 class ConversorDeTemperatura extends Conversor {
 
+    private HashMap<String, String> temperaturas;
+
     ConversorDeTemperatura() {
         super.setTitle("Temperatura");
+
         primeiraCaixaSelecao.setSelectedItem("Celsius");
         segundaCaixaSelecao.setSelectedItem("Fahrenheit");
     }
 
     @Override
-    public String[] getSelecao() {
-        return new String[] {"Celsius", "Fahrenheit", "Newton", "Delisle", "Kelvin", "Réaumur", "Rankine", "Romer"};
+    protected String[] getSelecao() {
+
+        temperaturas = new HashMap<>();
+        temperaturas.put("Celsius", "°C");
+        temperaturas.put("Fahrenheit", "°F");
+        temperaturas.put("Newton", "°N");
+        temperaturas.put("Delisle", "°D");
+        temperaturas.put("Kelvin", "K");
+        temperaturas.put("Réamur", "°Re");
+        temperaturas.put("Rankine", "°R");
+        temperaturas.put("Romer", "°Rø");
+
+        String[] nomesTemperaturas = new String[8];
+
+        int indice = 0;
+
+        for (String temperatura : temperaturas.keySet()) {
+            nomesTemperaturas[indice] = temperatura;
+            indice++;
+        }
+        return nomesTemperaturas;
     }
 
     @Override
-    public void converter() {
-
-        //TODO: fazer a entrada de dados também aceitar numeros negativos
-
+    protected void converter() {
         String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
         String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
 
@@ -377,13 +418,17 @@ class ConversorDeTemperatura extends Conversor {
         Double valorCalculado;
 
         try {
-            valor = Double.parseDouble(entradaDoUsuario.getText());
+            String tempValor = entradaDoUsuario.getText().replace(".", "_");
+            tempValor = tempValor.replace(",", ".");
+            valor = Double.parseDouble(tempValor) > 0 ? Double.parseDouble(tempValor) : 0;
+            super.mensagemErro.setText("");
             valorCalculado = getCalculoTemperatura(valorPrimeiraCaixa, valorSegundaCaixa, valor);
         } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
             valorCalculado = 0D;
+            super.mensagemErro.setText("Valor inválido.");
         }
 
-        String valorFormatado = String.format("%,.2f %s", valorCalculado, valorSegundaCaixa);
+        String valorFormatado = String.format("%,.2f %s", valorCalculado, temperaturas.get(valorSegundaCaixa));
 
         valorConvertido.setText(valorFormatado);
     }
@@ -628,21 +673,22 @@ class ConversorDeTemperatura extends Conversor {
     }
 }
 
+
 class ConversorDeDistancia extends Conversor {
 
     ConversorDeDistancia() {
-        super.setTitle("Distancia");
+        super.setTitle("Distância");
         primeiraCaixaSelecao.setSelectedItem("Metros");
         segundaCaixaSelecao.setSelectedItem("Quilômetros");
     }
 
     @Override
-    public String[] getSelecao() {
+    protected String[] getSelecao() {
         return new String[]{"Quilômetros", "Metros", "Milhas", "Centímetros", "Milímetros", "Pés", "Anos-luz",  "Léguas", "Milhas"};
     }
 
     @Override
-    public void converter() {
+    protected void converter() {
         String valorPrimeiraCaixa = Objects.requireNonNull(primeiraCaixaSelecao.getSelectedItem()).toString();
         String valorSegundaCaixa = Objects.requireNonNull(segundaCaixaSelecao.getSelectedItem()).toString();
 
@@ -650,10 +696,14 @@ class ConversorDeDistancia extends Conversor {
         String valorCalculado;
 
         try {
-            valor = Double.parseDouble(entradaDoUsuario.getText()) > 0 ? Double.parseDouble(entradaDoUsuario.getText()) : 0;
+            String tempValor = entradaDoUsuario.getText().replace(".", "_");
+            tempValor = tempValor.replace(",", ".");
+            valor = Double.parseDouble(tempValor) > 0 ? Double.parseDouble(tempValor) : 0;
             valorCalculado = getCalculoDistancia(valorPrimeiraCaixa, valorSegundaCaixa, valor);
+            super.mensagemErro.setText("");
         } catch (NullPointerException | NumberFormatException | ArithmeticException e) {
             valorCalculado = "0.0";
+            super.mensagemErro.setText("Valor inválido.");
         }
 
         String valorFormatado;
