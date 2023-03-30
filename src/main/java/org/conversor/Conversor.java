@@ -17,6 +17,8 @@ import java.net.URISyntaxException;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Conversor extends JPanel {
@@ -112,6 +114,7 @@ class ConversorDeMoeda extends Conversor {
     private JFrame janelaAtualizar;
     private Map<String, Map<String, String>> moedas;
     private Map<String, BigDecimal> valoresTaxaMoedasEmDolar;
+    private JLabel dataTaxaCambio;
 
     ConversorDeMoeda() {
         super.setTitle("Moeda");
@@ -133,6 +136,10 @@ class ConversorDeMoeda extends Conversor {
         botaoAtualizar.setBounds(250, 15, 30, 30);
         botaoAtualizar.addActionListener(e -> janelaAtualizarValores());
         this.add(botaoAtualizar);
+
+        dataTaxaCambio = new JLabel("Data valores: 18/03/2023");
+        dataTaxaCambio.setBounds(27, 350, 200, 20);
+        this.add(dataTaxaCambio);
     }
 
     @Override
@@ -302,6 +309,10 @@ class ConversorDeMoeda extends Conversor {
         valoresTaxaMoedasEmDolar.put("Libra Esterlina", new BigDecimal(jsonBody.get("GBP").toString()));
         valoresTaxaMoedasEmDolar.put("Peso Argentino", new BigDecimal(jsonBody.get("ARS").toString()));
         valoresTaxaMoedasEmDolar.put("Peso Chileno", new BigDecimal(jsonBody.get("CLP").toString()));
+
+        LocalDate dataDeAgora = LocalDate.now();
+        String dataDeAgoraFormatado = dataDeAgora.format(DateTimeFormatter.ofPattern("dd/MM/yyy"));
+        dataTaxaCambio.setText(String.format("Data valores: %s", dataDeAgoraFormatado));
     }
 
     @Override
