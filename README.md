@@ -61,3 +61,7 @@ O projeto usa o [Maven](https://maven.apache.org/) para gerenciar "builds" de pr
 [Maan Icons](https://www.flaticon.com/br/autores/maan-icons) - Icone usado para a janela.
 
 [Freepik](https://www.flaticon.com/br/autores/freepik) - Icone usado para o botão de atualizar os valores na aba de Moedas.
+
+[org.json](https://mvnrepository.com/artifact/org.json/json) - Biblioteca de Encoder/Decoder leve de JSON para Java.
+
+[Open Exchange Rates](https://openexchangerates.org/) - API para consulta de taxas de câmbios entre moedas.
