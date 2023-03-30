@@ -64,4 +64,4 @@ O projeto usa o [Maven](https://maven.apache.org/) para gerenciar "builds" de pr
 
 [org.json](https://mvnrepository.com/artifact/org.json/json) - Biblioteca de Encoder/Decoder leve de JSON para Java.
 
-[Open Exchange Rates](https://openexchangerates.org/) - API para consulta de taxas de câmbios entre moedas.
+[Open Exchange Rates](https://openexchangerates.org/) - API para consultas de taxas de câmbio entre moedas.
