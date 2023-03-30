@@ -27,8 +27,8 @@ public class Conversor extends JPanel {
     protected JTextArea valorConvertido;
     protected JLabel mensagemErro;
     protected JLabel tituloEntradaDoUsuario;
-    JLabel tituloPimeiraCaixaSelecao;
-    JLabel tituloSegundaCaixaSelecao;
+    protected JLabel tituloPimeiraCaixaSelecao;
+    protected JLabel tituloSegundaCaixaSelecao;
 
     Conversor() {
         this.setBounds(0, 0, 320, 493);
